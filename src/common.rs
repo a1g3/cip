@@ -3,7 +3,7 @@ use std::vec;
 use nom::IResult;
 use tokio::{io::{self, AsyncReadExt, AsyncWriteExt, Interest}, net::{TcpStream, UdpSocket}};
 
-use crate::{cpf::{CPFItem, CommonPacketHeader, CommonPacketList, ConnectedAddressItem, ConnectedDataItem, NullAddressItem, UnconnectedDataItem}, enip::{ENIPPacket, EtherNetIPHeader, RegisterSession, SendRRData, SendUnitData, UnregisterSession}};
+use crate::{cpf::{CPFItem, CommonPacketHeader, CommonPacketList, ConnectedAddressItem, ConnectedDataItem, NullAddressItem, UnconnectedDataItem}, enip::{ENIPPacket, EtherNetIPHeader, RegisterSession, SendRRData, SendUnitData, UnregisterSession, NOP}};
 
 pub trait NetworkSerializable {
     fn deserialize(input: &[u8]) -> IResult<&[u8], Self> where Self: Sized;
@@ -92,6 +92,12 @@ impl TcpEnipClient {
         items.push(connected);
         let list = CommonPacketList { length: 2, data: items};
         let mut packet = SendUnitData { header: header, interface_handle: 0, timeout: 0, items: list };
+        self.send_packet(&mut packet).await;
+    }
+
+    pub async fn send_nop(&mut self) {
+        let header = EtherNetIPHeader { command: 0x00, session_handle: self.connection_id, length: 0, status: 0, sender_context: 0, options: 0 };
+        let mut packet = NOP { header: header, data: vec![] };
         self.send_packet(&mut packet).await;
     }
 
@@ -196,6 +202,12 @@ impl UdpENIPClient {
         items.push(connected);
         let list = CommonPacketList { length: 2, data: items};
         let mut packet = SendUnitData { header: header, interface_handle: 0, timeout: 0, items: list };
+        self.send_packet(&mut packet).await;
+    }
+
+    pub async fn send_nop(&mut self) {
+        let header = EtherNetIPHeader { command: 0x00, session_handle: self.connection_id, length: 0, status: 0, sender_context: 0, options: 0 };
+        let mut packet = NOP { header: header, data: vec![] };
         self.send_packet(&mut packet).await;
     }
 

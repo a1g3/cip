@@ -7,7 +7,7 @@ use log::{info, LevelFilter};
 
 #[tokio::main]
 async fn main() {
-    let addr = "192.168.100.61:44818";
+    let addr = "192.168.100.2:44818";
     let _ = simple_logging::log_to_file("output.log", LevelFilter::Info);
 
     loop {

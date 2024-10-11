@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{thread, time::{self, Duration}};
 
 use cip::{cip::{CipClass, CipClient, EPath, LogicalSegment, LogicalType}, common::{self, NetworkSerializable, TcpEnipClient}, objects::connection_manager::ForwardOpenRequest};
 use log::{info, LevelFilter};
@@ -7,7 +7,7 @@ use tokio::net::TcpStream;
 
 #[tokio::main]
 async fn main() {
-    let addr = "192.168.100.61:44818";
+    let addr = "192.168.100.2:44818";
 
     let tcp = TcpStream::connect(addr).await.unwrap();
     tcp.set_nodelay(true).expect("Error setting nodelay");
@@ -17,8 +17,9 @@ async fn main() {
     let enip_client = TcpEnipClient::new(tcp);
     let mut client = CipClient::new(common::EnipClient::Tcp(enip_client));
     client.connect().await;
+    let mut response_status = 0;
 
-    for _ in 0..35 {
+    while response_status == 0 {
         let mut class_segment = LogicalSegment::new();
         let mut instance_segment = LogicalSegment::new(); 
     
@@ -50,12 +51,16 @@ async fn main() {
     
         let response  = client.call_service(CipClass::ConnectionManager as u32, 0x1, 0x54, forward_open.serialize()).await;
         info!("Received the following status: {:?}", response.general_status);
-
+        response_status = response.general_status;
     }
 
     info!("Waiting...");
     loop {
+        client.send_nop().await;
 
+        let one_minute = time::Duration::from_secs(60);
+        thread::sleep(one_minute);
+        
     }
     
     //client.disconnect().await;

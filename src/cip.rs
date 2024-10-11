@@ -470,4 +470,11 @@ impl CipClient {
         let result = MessageRouterResponse::deserialize(&data.data).unwrap();
         return result.1;
     }
+
+    pub async fn send_nop(&mut self) {
+        let data = match self.enip {
+            EnipClient::Udp(ref mut udp) => udp.send_nop().await,
+            EnipClient::Tcp(ref mut tcp) => tcp.send_nop().await,
+        };
+    }
 }
