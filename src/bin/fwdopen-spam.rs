@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use cip::{cip::{CipClass, CipClient, EPath, LogicalSegment, LogicalType}, common::{self, NetworkSerializable, TcpEnipClient}, objects::connection_manager::ForwardOpenRequest};
+use log::{info, LevelFilter};
 use rand::Rng;
 use tokio::net::TcpStream;
 
@@ -11,6 +12,7 @@ async fn main() {
     let tcp = TcpStream::connect(addr).await.unwrap();
     tcp.set_nodelay(true).expect("Error setting nodelay");
     let _ = tcp.set_linger(Some(Duration::from_secs(10)));
+    let _ = simple_logging::log_to_file("output.log", LevelFilter::Info);
 
     let enip_client = TcpEnipClient::new(tcp);
     let mut client = CipClient::new(common::EnipClient::Tcp(enip_client));
@@ -28,6 +30,7 @@ async fn main() {
         epath.attributes.push(Box::new(instance_segment));
         let mut rng = rand::thread_rng();
 
+        info!("Sending a new forward open packet!");
         let forward_open = ForwardOpenRequest { 
             priority: 0xF, 
             timeout_ticks: 0xFF, 
@@ -45,10 +48,12 @@ async fn main() {
             connection_path: epath 
         };
     
-        client.call_service(CipClass::ConnectionManager as u32, 0x1, 0x54, forward_open.serialize()).await;
+        let response  = client.call_service(CipClass::ConnectionManager as u32, 0x1, 0x54, forward_open.serialize()).await;
+        info!("Received the following status: {:?}", response.general_status);
 
     }
 
+    info!("Waiting...");
     loop {
 
     }

@@ -33,13 +33,13 @@ async fn main() {
         info!("Sending a new forward open packet!");
         let forward_open = ForwardOpenRequest { 
             priority: 0xF, 
-            timeout_ticks: 0xFF, 
+            timeout_ticks: 0, 
             ot_network_connection_id: 0, 
             to_network_connection_id: rng.gen(), 
             connection_serial_number: 0, 
             original_vendor_id: 0x011b, 
             original_serial_number: rng.gen(), 
-            connection_timeout_multiplier: 2, 
+            connection_timeout_multiplier: 0, 
             ot_rpi: 50000000, 
             ot_network_parameters: 0x43ff, 
             to_rpi: 50000000, 
