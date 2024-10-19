@@ -5,7 +5,7 @@ edition = "2021"
 license-file = "LICENSE"
 repository = "https://github.com/a1g3/cip"
 description="A pure EtherNet/IP library written in Rust"
-keywords = ["cip", "enip", "ethernetip", "common industry protocol"]
+keywords = ["cip", "enip", "ethernetip"]
 
 [dependencies]
 chrono = "0.4.31"
