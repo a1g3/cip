@@ -240,6 +240,26 @@ pub enum CipClass {
     EtherNetLink = 0xF6,
 }
 
+#[repr(u16)]
+#[allow(dead_code)]
+pub enum CipDataType {
+    Bool = 0x01,
+    Sint = 0x02,
+    Int = 0x03,
+    Dint = 0x04,
+    Lint = 0x05,
+    Usint = 0x06,
+    Uint = 0x07,
+    Udint = 0x08,
+    Ulint = 0x09,
+    Real = 0x0A,
+    Lreal = 0x0B,
+    Byte = 0x0C,
+    Word = 0x0D,
+    Dword = 0x0E,
+    Lword = 0x0F,
+}
+
 pub struct MessageRouterRequest {
     pub service: u8,
     pub epath: EPath,
@@ -415,7 +435,6 @@ impl CipClient {
         };
     
         let response = MessageRouterResponse::deserialize(&data.data).unwrap();
-        println!("STATUS: {:#4X}", response.1.general_status);
         let get_all_response = MessageRouter::deserialize(&response.1.data).unwrap();
     
         return get_all_response.1.objects;
