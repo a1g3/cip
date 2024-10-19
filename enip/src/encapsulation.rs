@@ -1,9 +1,9 @@
 use std::fmt;
 
 use nom::{number::complete::{le_u16, le_u32, le_u64}, sequence::tuple, IResult};
-use crate::{common::NetworkSerializable, cpf::CommonPacketList};
+use crate::{cpf::CommonPacketList, common::Serializable};
 
-pub trait ENIPPacket: NetworkSerializable {
+pub trait ENIPPacket: Serializable {
     fn set_session(&mut self, session_handle: u32);
 }
 
@@ -16,7 +16,7 @@ pub struct EtherNetIPHeader {
     pub options: u32
 }
 
-impl NetworkSerializable for EtherNetIPHeader {
+impl Serializable for EtherNetIPHeader {
     fn deserialize(input: &[u8]) -> IResult<&[u8], EtherNetIPHeader> {
         let (input, (command, length, session_handle, status, sender_context, options)) = tuple((le_u16, le_u16, le_u32, le_u32, le_u64, le_u32))(input)?;
 
@@ -67,7 +67,7 @@ pub struct RegisterSession {
     pub options: u16
 }
 
-impl NetworkSerializable for RegisterSession {
+impl Serializable for RegisterSession {
     fn deserialize(input: &[u8]) -> IResult<&[u8], RegisterSession> {
         let header = EtherNetIPHeader::deserialize(input)?;
         let (input, (version, options)) = tuple((le_u16, le_u16))(header.0)?;
@@ -98,7 +98,7 @@ pub struct SendUnitData {
     pub items: CommonPacketList
 }
 
-impl NetworkSerializable for SendUnitData {
+impl Serializable for SendUnitData {
     fn deserialize(input: &[u8]) -> IResult<&[u8], SendUnitData> {
         let header = EtherNetIPHeader::deserialize(input)?;
         let (input, (interface_handle, timeout)) = tuple((le_u32, le_u16))(header.0)?;
@@ -138,7 +138,7 @@ pub struct SendRRData {
     pub items: CommonPacketList
 }
 
-impl NetworkSerializable for SendRRData {
+impl Serializable for SendRRData {
     fn deserialize(input: &[u8]) -> IResult<&[u8], SendRRData> {
         let header = EtherNetIPHeader::deserialize(input)?;
         let (input, (interface_handle, timeout)) = tuple((le_u32, le_u16))(header.0)?;
@@ -176,7 +176,7 @@ pub struct NOP {
     pub data: Vec<u8>
 }
 
-impl NetworkSerializable for NOP {
+impl Serializable for NOP {
     fn deserialize(input: &[u8]) -> IResult<&[u8], NOP> {
         let header = EtherNetIPHeader::deserialize(input)?;
 

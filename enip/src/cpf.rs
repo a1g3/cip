@@ -3,9 +3,10 @@ use std::any::Any;
 
 use nom::{bytes::streaming::take, number::complete::{be_u32, le_u16, le_u32}, sequence::tuple, IResult, InputTake};
 
-use crate::common::NetworkSerializable;
+use crate::common::Serializable;
 
-pub trait CPFItem: NetworkSerializable {
+
+pub trait CPFItem: Serializable {
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -20,7 +21,7 @@ impl CPFItem for CommonPacketHeader {
     }
 }
 
-impl NetworkSerializable for CommonPacketHeader {
+impl Serializable for CommonPacketHeader {
     fn deserialize(input: &[u8]) -> IResult<&[u8], CommonPacketHeader> {
         let (input, (type_id, length)) = tuple((le_u16, le_u16))(input)?;
 
@@ -44,7 +45,7 @@ pub struct CommonPacketList
     pub data: Vec<Box<dyn CPFItem>>
 }
 
-impl NetworkSerializable for CommonPacketList {
+impl Serializable for CommonPacketList {
         fn deserialize(input: &[u8]) -> IResult<&[u8], CommonPacketList> {
             let item_count_split = le_u16(input)?;
 
@@ -112,7 +113,7 @@ impl CPFItem for SockAddrInfo {
     }
 }
 
-impl NetworkSerializable for SockAddrInfo {
+impl Serializable for SockAddrInfo {
     fn deserialize(input: &[u8]) -> IResult<&[u8], SockAddrInfo> {
         let (input, (type_id, length, sin_family, sin_port, sin_addr, sin_zero_context)) = tuple((le_u16, le_u16, be_u32, le_u16, le_u32, take(8u8)))(input)?;
         let sin_zero = sin_zero_context.try_into().expect("slice with incorrect length");
@@ -148,7 +149,7 @@ impl CPFItem for ConnectedDataItem {
     }
 }
 
-impl NetworkSerializable for ConnectedDataItem {
+impl Serializable for ConnectedDataItem {
     fn deserialize(input: &[u8]) -> IResult<&[u8], Self> where Self: Sized {
         let (input, (type_id, length)) = tuple((le_u16, le_u16))(input)?;
         let data= input.take(length.into()).to_vec();
@@ -181,7 +182,7 @@ impl CPFItem for UnconnectedDataItem {
     }
 }
 
-impl NetworkSerializable for UnconnectedDataItem {
+impl Serializable for UnconnectedDataItem {
     fn deserialize(input: &[u8]) -> IResult<&[u8], Self> where Self: Sized {
         let (input, (type_id, length)) = tuple((le_u16, le_u16))(input)?;
         let data= input.take(length.into()).to_vec();
@@ -214,7 +215,7 @@ impl CPFItem for ConnectedAddressItem {
     }
 }
 
-impl NetworkSerializable for ConnectedAddressItem {
+impl Serializable for ConnectedAddressItem {
     fn deserialize(input: &[u8]) -> IResult<&[u8], Self> where Self: Sized {
         let (input, (type_id, length, addr)) = tuple((le_u16, le_u16, le_u32))(input)?;
 

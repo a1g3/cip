@@ -3,7 +3,7 @@ mod tests {
     use std::io;
     use nom::lib::std::result::Result::Err;
 
-    use cip::{common::NetworkSerializable, enip::SendUnitData};
+    use cip::{common::Serializable, enip::SendUnitData};
 
 
     #[test]

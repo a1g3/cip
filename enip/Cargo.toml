@@ -1,0 +1,8 @@
+[package]
+name = "enip"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nom = "7.1.3"
+tokio = { version = "1", features = ["full"] }

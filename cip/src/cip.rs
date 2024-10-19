@@ -1,8 +1,8 @@
 use nom::{bytes::complete::take, sequence::tuple, InputTake};
 
-use crate::{common::{EnipClient, NetworkSerializable}, objects::{connection_manager::UnconnectedSendRequest, message_router::MessageRouter}};
+use crate::{common::Serializable, objects::{connection_manager::UnconnectedSendRequest, message_router::MessageRouter}};
 
-pub trait EpathSegments: NetworkSerializable {
+pub trait EpathSegments: Serializable {
     fn get_type(&self) -> u8;
     fn get_data(&self) -> Vec<u8>;
 }
@@ -65,7 +65,7 @@ impl EpathSegments for LogicalSegment {
     }
 }
 
-impl NetworkSerializable for LogicalSegment {
+impl Serializable for LogicalSegment {
     fn deserialize(input: &[u8]) -> nom::IResult<&[u8], Self> where Self: Sized {
         let encoding1 = input.take_split(1);
         let encoding = encoding1.0[0];
@@ -122,7 +122,7 @@ impl EpathSegments for PortSegment {
     }
 }
 
-impl NetworkSerializable for PortSegment {
+impl Serializable for PortSegment {
     fn deserialize(input: &[u8]) -> nom::IResult<&[u8], Self> where Self: Sized {
         let encoding1 = input.take_split(1);
         let encoding = encoding1.0[0];
@@ -266,7 +266,7 @@ pub struct MessageRouterRequest {
     pub data: Vec<u8>
 }
 
-impl NetworkSerializable for MessageRouterRequest {
+impl Serializable for MessageRouterRequest {
     fn deserialize(_input: &[u8]) -> nom::IResult<&[u8], Self> where Self: Sized {
         todo!()
     }
@@ -304,7 +304,7 @@ pub struct MessageRouterResponse {
     pub data: Vec<u8>
 }
 
-impl NetworkSerializable for MessageRouterResponse {
+impl Serializable for MessageRouterResponse {
     fn deserialize(input: &[u8]) -> nom::IResult<&[u8], Self> where Self: Sized {
         let (input, (raw_service, raw_reserved, raw_general_status, raw_size_of_additional_status)) = tuple((take(1u8),take(1u8),take(1u8), take(1u8)))(input)?;
         let service = raw_service[0].into();
@@ -320,41 +320,37 @@ impl NetworkSerializable for MessageRouterResponse {
     }
 }
 
+pub trait Client {
+    fn begin_session(&self);
+    fn send_unconnected(&self, packet: Vec<u8>);
+    fn read_data(&self) -> Vec<u8>;
+    fn send_nop(&self);
+    fn close_session(&self);
+}
+
 pub struct CipClient {
-    enip: EnipClient
+    client: Box<dyn Client>
 }
 
 impl CipClient {
-    pub fn new(client: EnipClient) -> Self {
-        Self { enip: client }
+    pub fn new(client: impl Client + 'static) -> Self {
+        Self { client: Box::new(client) }
     }
 
     pub async fn connect(&mut self) {
-        match self.enip {
-            EnipClient::Udp(_) => return,
-            EnipClient::Tcp(ref mut tcp) => tcp.begin_session().await,
-        }
+        self.client.begin_session();
     }
 
     pub async fn send_unconnected(&mut self, packet: Vec<u8>) {
-        match self.enip {
-            EnipClient::Udp(ref mut udp) => udp.send_unconnected(packet).await,
-            EnipClient::Tcp(ref mut tcp) => tcp.send_unconnected(packet).await,
-        }
+        self.client.send_unconnected(packet);
     }
 
     pub async fn read_data(&mut self) -> Vec<u8> {
-        match self.enip {
-            EnipClient::Udp(ref mut udp) => udp.read_data().await.data,
-            EnipClient::Tcp(ref mut tcp) => tcp.read_data().await.data,
-        }
+        self.client.read_data()
     }
 
     pub async fn disconnect(&mut self) {
-        match self.enip {
-            EnipClient::Udp(ref mut udp) => udp.close_session().await,
-            EnipClient::Tcp(ref mut tcp) => tcp.close_session().await,
-        }
+        self.client.close_session();
     }
 
     pub async fn call_service(&mut self, class_id: u32, instance_id: u32, service_num: u8, data: Vec<u8>) -> MessageRouterResponse {
@@ -374,12 +370,9 @@ impl CipClient {
 
         self.send_unconnected_cm(request).await;
 
-        let data = match self.enip {
-            EnipClient::Udp(ref mut udp) => udp.read_data().await,
-            EnipClient::Tcp(ref mut tcp) => tcp.read_data().await,
-        };
+        let data = self.client.read_data();
     
-        let result = MessageRouterResponse::deserialize(&data.data).unwrap();
+        let result = MessageRouterResponse::deserialize(&data).unwrap();
         return result.1;
     }
 
@@ -407,10 +400,7 @@ impl CipClient {
     
         let request = MessageRouterRequest { service: 0x52, epath, data: UnconnectedSendRequest { priority: 0b11, timeout_ticks: 240, message_request: request, route_path: unconnected_send_epath }.serialize() };
     
-        match self.enip {
-            EnipClient::Udp(ref mut udp) => udp.send_unconnected(request.serialize()).await,
-            EnipClient::Tcp(ref mut tcp) => tcp.send_unconnected(request.serialize()).await,
-        };
+        self.client.send_unconnected(request.serialize());
     }
 
     pub async fn get_supported_classes(&mut self) -> Vec<u16> {
@@ -429,12 +419,9 @@ impl CipClient {
     
         let request = MessageRouterRequest { service: CipService::GetAttributesAll as u8, epath, data: vec![] };
         self.send_unconnected(request.serialize()).await;
-        let data = match self.enip {
-            EnipClient::Udp(ref mut udp) => udp.read_data().await,
-            EnipClient::Tcp(ref mut tcp) => tcp.read_data().await,
-        };
+        let data = self.client.read_data();
     
-        let response = MessageRouterResponse::deserialize(&data.data).unwrap();
+        let response = MessageRouterResponse::deserialize(&data).unwrap();
         let get_all_response = MessageRouter::deserialize(&response.1.data).unwrap();
     
         return get_all_response.1.objects;
@@ -456,12 +443,9 @@ impl CipClient {
     
         let request = MessageRouterRequest { service: CipService::GetAttributeSingle as u8, epath, data: vec![] };
         self.send_unconnected_cm(request).await;
-        let data = match self.enip {
-            EnipClient::Udp(ref mut udp) => udp.read_data().await,
-            EnipClient::Tcp(ref mut tcp) => tcp.read_data().await,
-        };
+        let data = self.client.read_data();
     
-        let result = MessageRouterResponse::deserialize(&data.data).unwrap();
+        let result = MessageRouterResponse::deserialize(&data).unwrap();
         return result.1;
     }
     
@@ -481,19 +465,12 @@ impl CipClient {
     
         let request = MessageRouterRequest { service: CipService::SetAttributeSingle as u8, epath, data: vec![] };
         self.send_unconnected_cm(request).await;
-        let data = match self.enip {
-            EnipClient::Udp(ref mut udp) => udp.read_data().await,
-            EnipClient::Tcp(ref mut tcp) => tcp.read_data().await,
-        };
-    
-        let result = MessageRouterResponse::deserialize(&data.data).unwrap();
+        let data = self.client.read_data();
+        let result = MessageRouterResponse::deserialize(&data).unwrap();
         return result.1;
     }
 
     pub async fn send_nop(&mut self) {
-        let data = match self.enip {
-            EnipClient::Udp(ref mut udp) => udp.send_nop().await,
-            EnipClient::Tcp(ref mut tcp) => tcp.send_nop().await,
-        };
+        self.client.send_nop();
     }
 }

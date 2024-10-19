@@ -1,0 +1,14 @@
+[package]
+name = "cip"
+version = "0.1.0"
+edition = "2021"
+license-file = "LICENSE"
+repository = "https://github.com/a1g3/cip"
+description="A pure EtherNet/IP library written in Rust"
+keywords = ["cip", "enip", "ethernetip"]
+
+[dependencies]
+nom = "7.1.3"
+rand = "0.8.5"
+strum = "0.26.3"
+strum_macros = "0.26.4"

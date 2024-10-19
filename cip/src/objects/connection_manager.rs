@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::{cip::{EPath, MessageRouterRequest}, common::NetworkSerializable};
+use crate::{cip::{EPath, MessageRouterRequest}, common::Serializable};
 
 pub struct ForwardOpenRequest {
     pub priority: u8,
@@ -19,7 +19,7 @@ pub struct ForwardOpenRequest {
     pub connection_path: EPath
 }
 
-impl NetworkSerializable for ForwardOpenRequest {
+impl Serializable for ForwardOpenRequest {
     fn deserialize(input: &[u8]) -> nom::IResult<&[u8], Self> where Self: Sized {
         todo!()
     }
@@ -88,7 +88,7 @@ pub struct UnconnectedSendRequest {
     pub route_path: EPath
 }
 
-impl NetworkSerializable for UnconnectedSendRequest {
+impl Serializable for UnconnectedSendRequest {
     fn deserialize(input: &[u8]) -> nom::IResult<&[u8], Self> where Self: Sized {
         todo!()
     }

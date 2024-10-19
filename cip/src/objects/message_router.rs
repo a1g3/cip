@@ -1,13 +1,13 @@
 use nom::number::complete::le_u16;
 use strum_macros::EnumIter;
 
-use crate::common::NetworkSerializable;
+use crate::common::Serializable;
 
 pub struct MessageRouter {
     pub objects: Vec<u16>
 }
 
-impl NetworkSerializable for MessageRouter {
+impl Serializable for MessageRouter {
     fn deserialize(input: &[u8]) -> nom::IResult<&[u8], Self> where Self: Sized {
         let (input, number_objects) = le_u16(input)?;
         let mut objects = Vec::new();
