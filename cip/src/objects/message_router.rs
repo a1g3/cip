@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use nom::number::complete::le_u16;
 use strum_macros::EnumIter;
 
@@ -13,7 +14,6 @@ impl Serializable for MessageRouter {
         let mut objects = Vec::new();
 
         let mut remaining_input = input;
-        println!("Number of objects is {}", number_objects);
         if number_objects > 0 {
             for _ in 0..number_objects {
                 let (input, object_num) = le_u16(remaining_input)?;

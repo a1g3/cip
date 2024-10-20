@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use rand::Rng;
 
 use crate::{cip::{EPath, MessageRouterRequest}, common::Serializable};

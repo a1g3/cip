@@ -1,3 +1,4 @@
+use alloc::{boxed::Box, vec::{Vec}};
 use nom::{bytes::complete::take, sequence::tuple, InputTake};
 
 use crate::{common::Serializable, objects::{connection_manager::UnconnectedSendRequest, message_router::MessageRouter}};
@@ -130,7 +131,7 @@ impl Serializable for PortSegment {
         let value = encoding & 0b1111;
         let (reamining, link_address) = input.take_split(1);
 
-        return Ok((reamining, PortSegment { extended_link_address: is_extended, port_identifier: value, link_address: vec![link_address[0]] }));
+        return Ok((reamining, PortSegment { extended_link_address: is_extended, port_identifier: value, link_address: alloc::vec![link_address[0]] }));
     }
 
     fn serialize(&self) -> Vec<u8> {
@@ -379,7 +380,7 @@ impl CipClient {
     pub async fn send_unconnected_cm(&mut self, request: MessageRouterRequest) {
         let mut unconnected_send_epath  = EPath::new();
         let mut port_segment = PortSegment::new();
-        port_segment.set_address(vec![2]);
+        port_segment.set_address(alloc::vec![2]);
         unconnected_send_epath.attributes.push(Box::new(port_segment));
     
         let mut epath  = EPath::new();
@@ -417,7 +418,7 @@ impl CipClient {
         epath.attributes.push(Box::new(instance_segment));
         epath.attributes.push(Box::new(attribute_segment));
     
-        let request = MessageRouterRequest { service: CipService::GetAttributesAll as u8, epath, data: vec![] };
+        let request = MessageRouterRequest { service: CipService::GetAttributesAll as u8, epath, data: alloc::vec![] };
         self.send_unconnected(request.serialize()).await;
         let data = self.client.read_data();
     
@@ -441,7 +442,7 @@ impl CipClient {
         epath.attributes.push(Box::new(instance_segment));
         epath.attributes.push(Box::new(attribute_segment));
     
-        let request = MessageRouterRequest { service: CipService::GetAttributeSingle as u8, epath, data: vec![] };
+        let request = MessageRouterRequest { service: CipService::GetAttributeSingle as u8, epath, data: alloc::vec![] };
         self.send_unconnected_cm(request).await;
         let data = self.client.read_data();
     
@@ -463,7 +464,7 @@ impl CipClient {
         epath.attributes.push(Box::new(instance_segment));
         epath.attributes.push(Box::new(attribute_segment));
     
-        let request = MessageRouterRequest { service: CipService::SetAttributeSingle as u8, epath, data: vec![] };
+        let request = MessageRouterRequest { service: CipService::SetAttributeSingle as u8, epath, data: alloc::vec![] };
         self.send_unconnected_cm(request).await;
         let data = self.client.read_data();
         let result = MessageRouterResponse::deserialize(&data).unwrap();
