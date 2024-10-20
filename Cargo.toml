@@ -4,3 +4,6 @@ resolver = "2"
 members = [
     "cip", "enip",
 ]
+
+[workspace.dependencies]
+cip = { path = "cip" }

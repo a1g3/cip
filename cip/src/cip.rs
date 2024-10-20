@@ -1,4 +1,5 @@
 use alloc::{boxed::Box, vec::{Vec}};
+use async_trait::async_trait;
 use nom::{bytes::complete::take, sequence::tuple, InputTake};
 
 use crate::{common::Serializable, objects::{connection_manager::UnconnectedSendRequest, message_router::MessageRouter}};
@@ -321,12 +322,19 @@ impl Serializable for MessageRouterResponse {
     }
 }
 
+pub struct DataResult {
+    pub status: u32,
+    pub data: Vec<u8>,
+}
+
+#[async_trait]
 pub trait Client {
-    fn begin_session(&self);
-    fn send_unconnected(&self, packet: Vec<u8>);
-    fn read_data(&self) -> Vec<u8>;
-    fn send_nop(&self);
-    fn close_session(&self);
+    async fn begin_session(&mut self);
+    async fn send_unconnected(&mut self, packet: Vec<u8>);
+    async fn send_connected(&mut self, packet: Vec<u8>);
+    async fn read_data(&mut self) -> DataResult;
+    async fn send_nop(&mut self);
+    async fn close_session(&mut self);
 }
 
 pub struct CipClient {
@@ -339,19 +347,19 @@ impl CipClient {
     }
 
     pub async fn connect(&mut self) {
-        self.client.begin_session();
+        self.client.begin_session().await;
     }
 
     pub async fn send_unconnected(&mut self, packet: Vec<u8>) {
-        self.client.send_unconnected(packet);
+        self.client.send_unconnected(packet).await;
     }
 
-    pub async fn read_data(&mut self) -> Vec<u8> {
-        self.client.read_data()
+    pub async fn read_data(&mut self) -> DataResult {
+        self.client.read_data().await
     }
 
     pub async fn disconnect(&mut self) {
-        self.client.close_session();
+        self.client.close_session().await;
     }
 
     pub async fn call_service(&mut self, class_id: u32, instance_id: u32, service_num: u8, data: Vec<u8>) -> MessageRouterResponse {
@@ -371,9 +379,9 @@ impl CipClient {
 
         self.send_unconnected_cm(request).await;
 
-        let data = self.client.read_data();
+        let data = self.client.read_data().await;
     
-        let result = MessageRouterResponse::deserialize(&data).unwrap();
+        let result = MessageRouterResponse::deserialize(&data.data).unwrap();
         return result.1;
     }
 
@@ -401,7 +409,7 @@ impl CipClient {
     
         let request = MessageRouterRequest { service: 0x52, epath, data: UnconnectedSendRequest { priority: 0b11, timeout_ticks: 240, message_request: request, route_path: unconnected_send_epath }.serialize() };
     
-        self.client.send_unconnected(request.serialize());
+        self.client.send_unconnected(request.serialize()).await;
     }
 
     pub async fn get_supported_classes(&mut self) -> Vec<u16> {
@@ -420,9 +428,9 @@ impl CipClient {
     
         let request = MessageRouterRequest { service: CipService::GetAttributesAll as u8, epath, data: alloc::vec![] };
         self.send_unconnected(request.serialize()).await;
-        let data = self.client.read_data();
+        let data = self.client.read_data().await;
     
-        let response = MessageRouterResponse::deserialize(&data).unwrap();
+        let response = MessageRouterResponse::deserialize(&data.data).unwrap();
         let get_all_response = MessageRouter::deserialize(&response.1.data).unwrap();
     
         return get_all_response.1.objects;
@@ -444,9 +452,9 @@ impl CipClient {
     
         let request = MessageRouterRequest { service: CipService::GetAttributeSingle as u8, epath, data: alloc::vec![] };
         self.send_unconnected_cm(request).await;
-        let data = self.client.read_data();
+        let data = self.client.read_data().await;
     
-        let result = MessageRouterResponse::deserialize(&data).unwrap();
+        let result = MessageRouterResponse::deserialize(&data.data).unwrap();
         return result.1;
     }
     
@@ -466,12 +474,12 @@ impl CipClient {
     
         let request = MessageRouterRequest { service: CipService::SetAttributeSingle as u8, epath, data: alloc::vec![] };
         self.send_unconnected_cm(request).await;
-        let data = self.client.read_data();
-        let result = MessageRouterResponse::deserialize(&data).unwrap();
+        let data = self.client.read_data().await;
+        let result = MessageRouterResponse::deserialize(&data.data).unwrap();
         return result.1;
     }
 
     pub async fn send_nop(&mut self) {
-        self.client.send_nop();
+        self.client.send_nop().await;
     }
 }

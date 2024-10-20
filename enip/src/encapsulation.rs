@@ -3,7 +3,7 @@ use std::fmt;
 use nom::{number::complete::{le_u16, le_u32, le_u64}, sequence::tuple, IResult};
 use crate::{cpf::CommonPacketList, common::Serializable};
 
-pub trait ENIPPacket: Serializable {
+pub trait ENIPPacket: Serializable + Sized {
     fn set_session(&mut self, session_handle: u32);
 }
 
@@ -113,12 +113,10 @@ impl Serializable for SendUnitData {
         vec.extend_from_slice(&self.interface_handle.to_le_bytes());
         vec.extend_from_slice(&self.timeout.to_le_bytes());
 
-        if self.items.length > 0 {
-            vec.extend_from_slice(&self.items.length.to_le_bytes());
+        if self.items.len() > 0 {
+            vec.extend_from_slice(&self.items.len().to_le_bytes());
 
-            for n in &self.items.data {
-                vec.extend(n.serialize());
-            }
+            vec.extend(self.items.serialize());
         }
 
         return vec;  
@@ -153,12 +151,10 @@ impl Serializable for SendRRData {
         vec.extend_from_slice(&self.interface_handle.to_le_bytes());
         vec.extend_from_slice(&self.timeout.to_le_bytes());
 
-        if self.items.length > 0 {
-            vec.extend_from_slice(&self.items.length.to_le_bytes());
+        if self.items.len() > 0 {
+            vec.extend_from_slice(&self.items.len().to_le_bytes());
 
-            for n in &self.items.data {
-                vec.extend(n.serialize());
-            }
+            vec.extend(self.items.serialize());
         }
 
         return vec;  

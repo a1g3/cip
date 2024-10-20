@@ -8,12 +8,14 @@ description="A pure EtherNet/IP library written in Rust"
 keywords = ["cip", "enip", "ethernetip"]
 
 [dependencies]
+async-trait = "0.1.83"
 nom = "7.1.3"
 rand = "0.8.5"
 spin = "0.9.8"
 strum = "0.26.3"
 strum_macros = "0.26.4"
 talc = { version = "4.4.1", default-features = false, features = ["lock_api"] }
+trait-variant = "0.1.2"
 
 [unstable]
 build-std = ["core", "alloc"]
