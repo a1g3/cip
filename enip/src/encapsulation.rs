@@ -1,5 +1,4 @@
-use std::fmt;
-
+use alloc::vec::Vec;
 use nom::{number::complete::{le_u16, le_u32, le_u64}, sequence::tuple, IResult};
 use crate::{cpf::CommonPacketList, common::Serializable};
 
@@ -39,23 +38,6 @@ impl Serializable for EtherNetIPHeader {
 impl ENIPPacket for EtherNetIPHeader {
     fn set_session(&mut self, session_handle: u32) {
         self.session_handle = session_handle;
-    }
-}
-
-impl fmt::Display for EtherNetIPHeader {
-    // This trait requires `fmt` with this exact signature.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Write strictly the first element into the supplied output
-        // stream: `f`. Returns `fmt::Result` which indicates whether the
-        // operation succeeded or failed. Note that `write!` uses syntax which
-        // is very similar to `println!`.
-        let _ = write!(f, "\nCommand: {:#06x}\n", self.command);
-        let _ = write!(f, "Length: {}\n", self.length);
-        let _ = write!(f, "Session Handle: {:#06x}\n", self.session_handle);
-        let _ = write!(f, "Status: {}\n", self.status);
-        let _ = write!(f, "Sender Context: {:?}\n\n", self.sender_context);
-
-        return write!(f, "Options {0}", self.options);
     }
 }
 

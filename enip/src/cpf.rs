@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use nom::{bytes::streaming::take, number::complete::{be_u32, le_u16, le_u32}, sequence::tuple, IResult, InputTake};
 
 use crate::common::Serializable;
@@ -35,7 +36,7 @@ pub struct CommonPacketList
 
 impl CommonPacketList {
     pub fn new() -> Self {
-        Self { connected_addr_item: vec![], connected_data_item: vec![], null_address_item: vec![], unconnected_data_item: vec![] }
+        Self { connected_addr_item: Vec::new(), connected_data_item: Vec::new(), null_address_item: Vec::new(), unconnected_data_item: Vec::new() }
     }
 
     pub fn len(&self) -> u16 {

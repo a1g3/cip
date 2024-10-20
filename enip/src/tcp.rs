@@ -1,8 +1,9 @@
+use alloc::vec::Vec;
 use async_trait::async_trait;
 use cip::cip::{Client, DataResult};
 use tokio::{io::{self, AsyncReadExt, AsyncWriteExt, Interest}, net::TcpStream};
-
-use crate::{common::{Serializable}, cpf::{CommonPacketHeader, CommonPacketList, ConnectedAddressItem, ConnectedDataItem, NullAddressItem, UnconnectedDataItem}, encapsulation::{EtherNetIPHeader, RegisterSession, SendRRData, SendUnitData, UnregisterSession, NOP}, udp::UdpENIPClient};
+use alloc::boxed::Box;
+use crate::{common::Serializable, cpf::{CommonPacketHeader, CommonPacketList, ConnectedAddressItem, ConnectedDataItem, NullAddressItem, UnconnectedDataItem}, encapsulation::{EtherNetIPHeader, RegisterSession, SendRRData, SendUnitData, UnregisterSession, NOP}, udp::UdpENIPClient};
 
 pub struct TcpEnipClient {
     pub session_handle: u32,
@@ -30,7 +31,6 @@ impl TcpEnipClient {
                 }
                 Err(_) => {
                     //x.push(work_item).await;
-                    println!("ERROR");
                 }
             }
         }
@@ -39,22 +39,21 @@ impl TcpEnipClient {
     async fn read_packet(&mut self) -> Vec<u8> {
         let _ready = self.tcp.readable().await.unwrap();
     
-        let mut data: Vec<u8> = vec![0; 65535];
+        let mut data: Vec<u8> = alloc::vec![0; 65535];
         match self.tcp.read(&mut data).await {
             Ok(n) => {
                 if n >= 24 {
-                    let mut local = vec![0; n];
+                    let mut local = alloc::vec![0; n];
                     for i in 0..n {
                         local[i] = data[i]
                     }
                     return local;
                 }
 
-                return vec![]
+                return alloc::vec![]
             }
             Err(e) => {
-                println!("Error: {}", e);
-                return vec![];
+                return alloc::vec![];
             }
 
         }
@@ -98,7 +97,7 @@ impl Client for TcpEnipClient {
 
     async fn send_nop(&mut self) {
         let header = EtherNetIPHeader { command: 0x00, session_handle: self.connection_id, length: 0, status: 0, sender_context: 0, options: 0 };
-        let packet = NOP { header: header, data: vec![] };
+        let packet = NOP { header: header, data: Vec::new() };
         self.send_packet(packet.serialize()).await;
     }
 

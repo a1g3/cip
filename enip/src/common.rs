@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use nom::IResult;
 
 pub trait Serializable {
