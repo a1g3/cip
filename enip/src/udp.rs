@@ -19,7 +19,7 @@ impl UdpENIPClient {
     async fn read_packet(&self) -> Vec<u8> {
         let _ready = self.udp.readable().await.unwrap();
     
-        let mut data: Vec<u8> = alloc::vec![0; 65535];
+        let mut data: Vec<u8> = alloc::vec![0; 512];
 
         match self.udp.recv(&mut data).await {
             Ok(n) => {

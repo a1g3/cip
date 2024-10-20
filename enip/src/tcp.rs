@@ -39,7 +39,7 @@ impl TcpEnipClient {
     async fn read_packet(&mut self) -> Vec<u8> {
         let _ready = self.tcp.readable().await.unwrap();
     
-        let mut data: Vec<u8> = alloc::vec![0; 65535];
+        let mut data: Vec<u8> = alloc::vec![0; 8192];
         match self.tcp.read(&mut data).await {
             Ok(n) => {
                 if n >= 24 {
